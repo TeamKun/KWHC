@@ -1,0 +1,6 @@
+name: Kwhc
+version: ${project.version}
+main: net.kunlab.kwhc.Kwhc
+api-version: 1.15
+authors: [ Bun133 ]
+website: https://github/TeamKun/KWHC
