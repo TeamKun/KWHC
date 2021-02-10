@@ -1,8 +1,13 @@
 package net.kunlab.kwhc.role
 
 import net.kunlab.kwhc.Kwhc
+import org.bukkit.Color
+import org.bukkit.DyeColor
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.LeatherArmorMeta
 
 class RoleManager(val plugin: Kwhc) {
     private val roles = mutableMapOf<Player, RoleInstance>()
@@ -14,7 +19,7 @@ class RoleManager(val plugin: Kwhc) {
         return get(p)?.side
     }
 
-    fun isDead(p:Player): Boolean? {
+    fun isDead(p: Player): Boolean? {
         return get(p)?.isDead
     }
 
@@ -22,7 +27,7 @@ class RoleManager(val plugin: Kwhc) {
         roles[p] = RoleInstance(p, r, r.defaultSide)
     }
 
-    fun setDead(p:Player,b:Boolean){
+    fun setDead(p: Player, b: Boolean) {
         roles[p]?.isDead = b
     }
 }
@@ -40,20 +45,36 @@ class RoleInstance(val p: Player, val baseRole: Role, var side: Side) {
 
 data class DeathInfo(val player: Player, val role: Role, val side: Side, val deadInventory: Inventory)
 
-enum class Role(val displayName: String, val defaultSide: Side) {
-    Kun("Kun", Side.Kun),
-    Norunoru("のるのる", Side.Kun),
-    Detective("探偵", Side.Kun),
-    Mystic("霊媒師", Side.Kun),
-    Knight("騎士", Side.Kun),
-    Tirno("チルノ", Side.Neutral),
-    Oblivion("忘却者", Side.Neutral),
-    Tomas("トーマス", Side.Tomas),
-    Troll("トロール", Side.Troll),
-    Commander("コマンド勢", Side.Troll),
-    None("無名", Side.Kun),
-    Madman("狂人", Side.Troll),
-    Dead("死人", Side.Dead)
+enum class Role(val displayName: String, val defaultSide: Side, val dyeColor: DyeColor) {
+    Kun("Kun", Side.Kun, DyeColor.GREEN),
+    Norunoru("のるのる", Side.Kun, DyeColor.PURPLE),
+    Detective("探偵", Side.Kun, DyeColor.BLUE),
+    Mystic("霊媒師", Side.Kun, DyeColor.WHITE),
+    Knight("騎士", Side.Kun, DyeColor.GRAY),
+    Tirno("チルノ", Side.Neutral, DyeColor.LIGHT_BLUE),
+    Oblivion("忘却者", Side.Neutral, DyeColor.YELLOW),
+    Tomas("トーマス", Side.Tomas, DyeColor.PINK),
+    Troll("トロール", Side.Troll, DyeColor.RED),
+    Commander("コマンド勢", Side.Troll, DyeColor.BLACK),
+    None("無名", Side.Kun, DyeColor.LIME),
+    Madman("狂人", Side.Troll, DyeColor.CYAN),
+    Dead("死人", Side.Dead, DyeColor.MAGENTA);
+
+    fun getHelmet(): ItemStack {
+        val i = ItemStack(Material.LEATHER_HELMET, 1)
+        val meta = i.itemMeta as LeatherArmorMeta
+        meta.setColor(this.dyeColor.color)
+        i.itemMeta = meta
+        return i
+    }
+
+    companion object{
+        fun get(color:DyeColor): Role? {
+            return values().toList().filter {
+                it.dyeColor === color
+            }.getOrNull(0)
+        }
+    }
 }
 
 enum class Side(val displayName: String) {
