@@ -4,12 +4,15 @@ import net.kunlab.kwhc.flylib.FlyLib
 import net.kunlab.kwhc.role.COManager
 import net.kunlab.kwhc.role.RoleManager
 import net.kunlab.kwhc.shop.ShopInstance
+import net.kunlab.kwhc.vote.VoteCommand
+import net.kunlab.kwhc.vote.VoteManager
 import org.bukkit.plugin.java.JavaPlugin
 
 class Kwhc : JavaPlugin() {
     lateinit var roleManager:RoleManager
     lateinit var coManager :COManager
     lateinit var shop:ShopInstance
+    lateinit var vote:VoteManager
 
     override fun onEnable() {
         // Plugin startup logic
@@ -18,6 +21,8 @@ class Kwhc : JavaPlugin() {
         roleManager = RoleManager(this)
         coManager = COManager(this)
         shop = ShopInstance(this)
+        vote = VoteManager(this)
+        getCommand("v")!!.setExecutor(VoteCommand(this))
     }
 
 
