@@ -8,3 +8,6 @@ commands:
   v:
     description: VoteCommand
     usage: /<command> <playername>
+  s:
+    description: ShopCommand
+    usage: /<command>

@@ -6,6 +6,9 @@ import net.kunlab.kwhc.flylib.ChestGUI
 import net.kunlab.kwhc.flylib.GUIObject
 import net.kunlab.kwhc.role.Side
 import org.bukkit.Material
+import org.bukkit.command.Command
+import org.bukkit.command.CommandExecutor
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.ItemStack
@@ -251,3 +254,20 @@ enum class ShopItem(
     }
 }
 
+class ShopCommand(val plugin:Kwhc):CommandExecutor{
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        return if(sender is Player){
+            val r = plugin.roleManager.get(sender)
+            if(r!=null){
+                plugin.shop.open(r.p)
+                true
+            }else{
+                sender.sendMessage("ゲームに参加していないため、ショップを表示できません")
+                true
+            }
+        }else{
+            sender.sendMessage("サーバーからは実行できません")
+            true
+        }
+    }
+}
