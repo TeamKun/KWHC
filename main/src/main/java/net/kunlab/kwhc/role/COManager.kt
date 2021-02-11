@@ -21,8 +21,9 @@ class COManager(val plugin: Kwhc):Listener {
         if(e.newItem !== null){
             if(e.newItem!!.type === Material.LEATHER_HELMET){
                 val meta = e.newItem!!.itemMeta as LeatherArmorMeta
-                val role = Role.get(DyeColor.getByColor(meta.color)!!)!!
-                onCO(CO(e.player,role))
+                val role = Role.get(DyeColor.getByColor(meta.color)!!)
+                if(role != null)
+                    onCO(CO(e.player,role))
             }
         }
     }
