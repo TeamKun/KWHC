@@ -1,7 +1,5 @@
 package net.kunlab.kwhc.flylib
 
-import com.flylib.event.MainListener
-import com.flylib.state.State
 import org.bukkit.plugin.java.JavaPlugin
 
 class FlyLib(var plugin: JavaPlugin) {
@@ -18,8 +16,6 @@ class FlyLib(var plugin: JavaPlugin) {
         plugin.server.pluginManager.registerEvents(MainListener.instance, plugin)
         instance = this
     }
-
-    var state = State()
 }
 
 class FlyLibNotReadyException:Exception("FlyLib is not ready")
