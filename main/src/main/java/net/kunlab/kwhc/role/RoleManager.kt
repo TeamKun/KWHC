@@ -1,6 +1,7 @@
 package net.kunlab.kwhc.role
 
 import net.kunlab.kwhc.Kwhc
+import net.kunlab.kwhc.flylib.TabObject
 import org.bukkit.Color
 import org.bukkit.DyeColor
 import org.bukkit.Material
@@ -68,11 +69,24 @@ enum class Role(val displayName: String, val defaultSide: Side, val dyeColor: Dy
         return i
     }
 
-    companion object{
-        fun get(color:DyeColor): Role? {
+    override fun toString(): String {
+        return "$displayName サイド:${defaultSide.displayName} 色:${dyeColor}"
+    }
+
+    companion object {
+        fun get(color: DyeColor): Role? {
             return values().toList().filter {
                 it.dyeColor === color
             }.getOrNull(0)
+        }
+
+        fun getTabObject(): TabObject {
+            val list = values().map { it.displayName }
+            return TabObject(list)
+        }
+
+        fun get(s: String): Role? {
+            return values().filter { it.displayName == s }.getOrNull(0)
         }
     }
 }
