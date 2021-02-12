@@ -19,14 +19,17 @@ class ShopInstance(val plugin: Kwhc) {
         /**
          * Get Number of Player Coins
          */
-        val coin = Material.GOLD_INGOT
+        private val coin = Material.GOLD_INGOT
         fun getPlayerValue(p: Player): Int {
             var value = 0
-            p.inventory.forEach {
-                if (it.type == coin) {
+            p.inventory
+                .filterNotNull()
+                .filter {
+                    it.type === coin
+                }
+                .forEach {
                     value += it.amount
                 }
-            }
             return value
         }
 
@@ -67,7 +70,9 @@ class ShopInstance(val plugin: Kwhc) {
     fun buy(p: Player, item: ShopItem) {
         if (item.side(p, plugin)) {
             if (canBuy(p, item)) {
-                losePlayerValue(p, NaturalNumber(item.value))
+                if (!losePlayerValue(p, NaturalNumber(item.value))) {
+                    println("Something went wrong.")
+                }
                 item.itemGenerator().forEach { p.inventory.addItem(it) }
             } else {
                 p.sendMessage("You don't have enough money to buy it.")
@@ -100,17 +105,18 @@ class ShopInstance(val plugin: Kwhc) {
             gui.listener.add(::onClick)
         }
 
-        private fun onClick(p: Pair<GUIObject, InventoryClickEvent>) {
+        fun onClick(p: Pair<GUIObject, InventoryClickEvent>) {
             val e = p.second
             val o = p.first
             if (e.currentItem != null) {
                 if (o.anyData.containsKey("shop") && o.anyData["shop"] is ShopItem) {
                     val shopItem: ShopItem = o.anyData["shop"] as ShopItem
                     plugin.shop.buy(e.whoClicked as Player, shopItem)
+                    e.isCancelled = true
                 } else {
                     println("Something went wrong in ShopGUI");return
                 }
-            }
+            } else println("Something went wrong in ShopGUI")
         }
 
         fun open() {

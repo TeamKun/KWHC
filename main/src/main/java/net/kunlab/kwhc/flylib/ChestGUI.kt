@@ -45,7 +45,7 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
      */
     fun addGUIObject(obj: GUIObject) {
         guis.set(obj.x, obj.y, obj)
-        inventorySync()
+//        inventorySync() ←無限ループの元
         if (isOpening) {
             //ReOpen
             open()
@@ -101,9 +101,7 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
 
     fun addGUIObject(x: NaturalNumber, y: NaturalNumber, real_stack: ItemStack) : GUIObject{
         val o = GUIObject(this, x, y, real_stack)
-        addGUIObject(
-            o
-        )
+        addGUIObject(o)
         return o
     }
 }
@@ -153,6 +151,9 @@ class GUIObjectEventHandler(
             )
             copy.itemMeta = meta
         }
+
+        // ADDED FOR KWHC
+        callbacks.add(::onClickProxy)
     }
 
     fun getStack() = copy
@@ -162,6 +163,7 @@ class GUIObjectEventHandler(
             if (callbacks.isEmpty()) {
                 return
             }
+            if(e.currentItem == null) return
             if (e.currentItem!!.hasItemMeta()) {
                 val meta = e.currentItem!!.itemMeta
                 if (meta.persistentDataContainer.has(
@@ -174,9 +176,6 @@ class GUIObjectEventHandler(
                             PersistentDataType.STRING
                         )
                     ) {
-                        // ADDED FOR KWHC
-                        obj.gui.onClicked(obj,e)
-
                         for (callback in callbacks) {
                             callback.invoke(e)
                         }
@@ -187,6 +186,11 @@ class GUIObjectEventHandler(
                 }
             }
         }
+    }
+
+    // ADDED FOR KWHC
+    private fun onClickProxy(e:InventoryClickEvent){
+        obj.gui.onClicked(obj,e)
     }
 }
 
