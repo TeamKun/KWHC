@@ -127,6 +127,7 @@ class VoteCommand(val plugin: Kwhc) : CommandExecutor {
                 val to = plugin.roleManager.get(Bukkit.selectEntities(sender, args[0])[0] as Player)
                 if (to != null) {
                     plugin.vote.onVote(from, to)
+                    return true
                 } else {
                     sender.sendMessage("投票先が無効です")
                     return true
