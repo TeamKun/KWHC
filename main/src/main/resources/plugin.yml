@@ -11,3 +11,9 @@ commands:
   s:
     description: ShopCommand
     usage: /<command>
+  k:
+    description: Game Master Command
+    usage: /<command> <s/e/start/end>
+  r:
+    description: SetRole Command
+    usage: /<command> (<playername>) <RoleName>
