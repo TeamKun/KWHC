@@ -92,22 +92,24 @@ class ShopInstance(val plugin: Kwhc) {
                 }
                 .forEachIndexed { i, item ->
                     gui.addGUIObject(
-                        GUIObject(
-                            NaturalNumber(i % 8 + 1),
-                            NaturalNumber(i / 8 + 1),
-                            item.itemGenerator()[0]
-                        ).addCallBack(::onClick)
-                    )
+                        NaturalNumber(i % 8 + 1),
+                        NaturalNumber(i / 8 + 1),
+                        item.generateItem()[0]
+                    ).anyData["shop"] = item
                 }
+            gui.listener.add(::onClick)
         }
 
-        private fun onClick(e: InventoryClickEvent) {
+        private fun onClick(p: Pair<GUIObject, InventoryClickEvent>) {
+            val e = p.second
+            val o = p.first
             if (e.currentItem != null) {
-                val shopItem = ShopItem.getFromStack(e.currentItem!!)
-                if (shopItem == null) {
+                if (o.anyData.containsKey("shop") && o.anyData["shop"] is ShopItem) {
+                    val shopItem: ShopItem = o.anyData["shop"] as ShopItem
+                    plugin.shop.buy(e.whoClicked as Player, shopItem)
+                } else {
                     println("Something went wrong in ShopGUI");return
                 }
-                plugin.shop.buy(e.whoClicked as Player, shopItem)
             }
         }
 
@@ -122,26 +124,30 @@ val all = { _: Player, _: Kwhc -> true }
 enum class ShopItem(
     val itemGenerator: () -> List<ItemStack>,
     val value: Int,
-    val side: (Player, Kwhc) -> Boolean
+    val side: (Player, Kwhc) -> Boolean,
+    val displayName: String
 ) {
     // SWORDS
 
     WOODEN_SWORD(
         { listOf(ItemStack(Material.WOODEN_SWORD)) },
         1,
-        all
+        all,
+        "木の剣"
     ),
     STONE_SWORD(
         { listOf(ItemStack(Material.STONE_SWORD)) },
         2,
-        all
+        all,
+        "石の剣"
     ),
 
 
     TNT(
         { listOf(ItemStack(Material.TNT, 3)) },
         1,
-        { p: Player, k: Kwhc -> k.roleManager.get(p)?.side === Side.Troll }
+        { p: Player, k: Kwhc -> k.roleManager.get(p)?.side === Side.Troll },
+        "TNT"
     ),
 
     BOW_ARROW(
@@ -154,7 +160,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Commander,
                 false
             )
-        }
+        },
+        "弓と矢"
     ),
 
     SONAR(
@@ -167,7 +174,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Commander,
                 false
             )
-        }
+        },
+        "ソナー"
     ),
 
     DETECTIVE_BOOK(
@@ -180,7 +188,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Detective,
                 false
             )
-        }
+        },
+        "探偵の本"
     ),
 
     READER(
@@ -193,7 +202,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Detective,
                 false
             )
-        }
+        },
+        "レーダー"
     ),
 
     MysticPray(
@@ -206,7 +216,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Mystic,
                 false
             )
-        }
+        },
+        "霊媒師の祈り"
     ),
 
     KnightPray(
@@ -219,7 +230,8 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Knight,
                 false
             )
-        }
+        },
+        "騎士の祈り"
     ),
 
     KnightSword(
@@ -236,36 +248,53 @@ enum class ShopItem(
                 k.roleManager.get(p)?.baseRole === net.kunlab.kwhc.role.Role.Knight,
                 false
             )
-        }
+        },
+        "騎士の剣"
     );
+
+    fun generateItem(): List<ItemStack> {
+        val item = itemGenerator()
+        item.forEach {
+            val meta = it.itemMeta
+            meta.setDisplayName(displayName)
+            it.itemMeta = meta
+        }
+        return item
+    }
 
     companion object {
         fun getFromStack(stack: ItemStack): ShopItem? {
-            return values().map { Pair(it, it.itemGenerator()) }
+            return values()
                 .filter {
-                    var b = false
-                    it.second.forEach { s ->
-                        b = b || stack.isSimilar(s)
-                    }
-                    b
-                }.map { it.first }
+                    val b = isSame(it, stack)
+                    println("${it.displayName}:$b")
+                    return@filter b
+                }
                 .getOrNull(0)
+        }
+
+        fun isSame(shop: ShopItem, stack: ItemStack): Boolean {
+            val item = shop.generateItem()
+            println("stack.type === item[0].type:${stack.type === item[0].type}")
+            println("stack.amount == item[0].amount:${stack.amount == item[0].amount}")
+            println("stack.itemMeta.displayName === item[0].itemMeta.displayName:${stack.itemMeta.displayName === item[0].itemMeta.displayName}")
+            return (stack.type === item[0].type && stack.amount == item[0].amount && stack.itemMeta.displayName === item[0].itemMeta.displayName)
         }
     }
 }
 
-class ShopCommand(val plugin:Kwhc):CommandExecutor{
+class ShopCommand(val plugin: Kwhc) : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        return if(sender is Player){
+        return if (sender is Player) {
             val r = plugin.roleManager.get(sender)
-            if(r!=null){
+            if (r != null) {
                 plugin.shop.open(r.p)
                 true
-            }else{
+            } else {
                 sender.sendMessage("ゲームに参加していないため、ショップを表示できません")
                 true
             }
-        }else{
+        } else {
             sender.sendMessage("サーバーからは実行できません")
             true
         }
