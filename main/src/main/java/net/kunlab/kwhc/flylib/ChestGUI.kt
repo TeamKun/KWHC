@@ -62,7 +62,7 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
     fun getGUIsArray(): Array<GUIObject> {
         val array: Array<GUIObject> =
             Array(9 * col.toInt()) {
-                GUIObject(
+                addGUIObject(
                     NaturalNumber(it % 9 + 1),
                     NaturalNumber(it / 9 + 1),
                     ItemStack(Material.AIR)
@@ -73,7 +73,7 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
                 val t = guis.get(NaturalNumber(x), NaturalNumber(y))
                 if (t == null) {
                     array[(y - 1) * 9 + (x - 1)] =
-                        GUIObject(NaturalNumber(x), NaturalNumber(y), ItemStack(Material.AIR))
+                        GUIObject(this,NaturalNumber(x), NaturalNumber(y), ItemStack(Material.AIR))
                 } else {
                     array[(y - 1) * 9 + (x - 1)] = t.t
                 }
@@ -90,6 +90,22 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
         }
         return copy
     }
+
+    // ADDED FOR KWHC
+    val listener = mutableListOf<KFunction1<Pair<GUIObject,InventoryClickEvent>, Unit>>()
+    fun onClicked(d: GUIObject,e:InventoryClickEvent) {
+        listener.forEach {
+            it(Pair(d,e))
+        }
+    }
+
+    fun addGUIObject(x: NaturalNumber, y: NaturalNumber, real_stack: ItemStack) : GUIObject{
+        val o = GUIObject(this, x, y, real_stack)
+        addGUIObject(
+            o
+        )
+        return o
+    }
 }
 
 /**
@@ -100,8 +116,7 @@ class ChestGUI(var p: Player, var col: NaturalNumber, name: String) {
  * Chest Will be Showed at x:5,y:2
  * left up is (1,1)
  */
-class GUIObject(val x: NaturalNumber, val y: NaturalNumber, real_stack: ItemStack) {
-    //    val id: ByteArray = GUIObjectByteManager.instance.getNew()
+class GUIObject(val gui: ChestGUI, val x: NaturalNumber, val y: NaturalNumber, real_stack: ItemStack) {
     val id: String = UUID.randomUUID().toString()
     private val handler = GUIObjectEventHandler(this, real_stack)
     fun getStack() = handler.getStack()
@@ -109,6 +124,10 @@ class GUIObject(val x: NaturalNumber, val y: NaturalNumber, real_stack: ItemStac
         handler.callbacks.add(f)
         return this
     }
+
+    //ADDED FOR KWHC
+    val stringData = mutableMapOf<String,String>()
+    val anyData = mutableMapOf<String,Any>()
 }
 
 class GUIObjectEventHandler(
@@ -155,6 +174,9 @@ class GUIObjectEventHandler(
                             PersistentDataType.STRING
                         )
                     ) {
+                        // ADDED FOR KWHC
+                        obj.gui.onClicked(obj,e)
+
                         for (callback in callbacks) {
                             callback.invoke(e)
                         }
@@ -170,7 +192,8 @@ class GUIObjectEventHandler(
 
 class DropChestGUI(val title: String, val p: Player, val col: Int = 1) {
     val inventory: Inventory
-    private val registry = mutableListOf<KFunction1<MutableList<ItemStack>,Unit>>()
+    private val registry = mutableListOf<KFunction1<MutableList<ItemStack>, Unit>>()
+
     init {
         if (col > 6 || col < 1) {
             throw IllegalArgumentException("ChestGUI col size is Illegal")
@@ -183,9 +206,9 @@ class DropChestGUI(val title: String, val p: Player, val col: Int = 1) {
         p.openInventory(inventory)
     }
 
-    fun onClose(e:Event){
-        if(e is InventoryCloseEvent){
-            if(e.inventory == inventory){
+    fun onClose(e: Event) {
+        if (e is InventoryCloseEvent) {
+            if (e.inventory == inventory) {
                 val list = getAllContents()
                 registry.forEach {
                     it(list)
@@ -197,14 +220,14 @@ class DropChestGUI(val title: String, val p: Player, val col: Int = 1) {
     fun getAllContents(): MutableList<ItemStack> {
         val list = mutableListOf<ItemStack>()
         inventory.contents.iterator().forEach {
-            if(it != null && it.type !== Material.AIR){
+            if (it != null && it.type !== Material.AIR) {
                 list.add(it)
             }
         }
         return list
     }
 
-    fun register(f:KFunction1<MutableList<ItemStack>,Unit>):DropChestGUI{
+    fun register(f: KFunction1<MutableList<ItemStack>, Unit>): DropChestGUI {
         registry.add(f)
         return this
     }
