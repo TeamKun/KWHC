@@ -16,16 +16,19 @@ class TimeController(val plugin: Kwhc) {
     }
 
     fun cycleStart() {
+        println("cycleStart")
         plugin.timer.register({ doVote() }, VoteTick.toLong())
     }
 
     fun doVote() {
+        println("doVote")
         plugin.vote.start()
         plugin.timer.register({ stopVote() }, VoteTime.toLong())
     }
 
     fun stopVote() {
+        println("stopVote")
         plugin.vote.end()
-        plugin.timer.register({ doVote() }, VoteTick.toLong())
+        cycleStart()
     }
 }
