@@ -1,5 +1,6 @@
 package net.kunlab.kwhc
 
+import net.kunlab.kwhc.event.death.DeathEventListener
 import net.kunlab.kwhc.flylib.*
 import net.kunlab.kwhc.role.COManager
 import net.kunlab.kwhc.role.Role
@@ -24,6 +25,7 @@ class Kwhc : JavaPlugin() {
     lateinit var coManager: COManager
     lateinit var shop: ShopInstance
     lateinit var vote: VoteManager
+    lateinit var deathEventListener: DeathEventListener
     var isGoingOn = false
 
     override fun onEnable() {
@@ -40,11 +42,14 @@ class Kwhc : JavaPlugin() {
         coManager = COManager(this)
         shop = ShopInstance(this)
         vote = VoteManager(this)
+        deathEventListener = DeathEventListener(this)
         getCommand("v")!!.setExecutor(VoteCommand(this))
         getCommand("s")!!.setExecutor(ShopCommand(this))
         getCommand("k")!!.setExecutor(MainCommand(this))
         getCommand("r")!!.setExecutor(SetRoleCommand(this))
         getCommand("r")!!.tabCompleter = SetRoleCommand(this).generateTabCompleter()
+        getCommand("c")!!.setExecutor(CheckRoleCommand(this))
+        getCommand("skip")!!.setExecutor(SkipToVoteCommand(this))
     }
 
     fun onStart() {
@@ -93,10 +98,12 @@ class MainCommand(val plugin: Kwhc) : CommandExecutor {
     }
 
     fun onStart() {
+        Bukkit.broadcastMessage("ゲーム開始!")
         plugin.onStart()
     }
 
     fun onEnd() {
+        Bukkit.broadcastMessage("ゲーム終了!")
         plugin.onEnd()
     }
 }
@@ -152,4 +159,66 @@ class SetRoleCommand(val plugin: Kwhc) : CommandExecutor {
             Role.getTabObject()
         )
     )
+}
+
+class CheckRoleCommand(val plugin: Kwhc) : CommandExecutor {
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender is Player) {
+            if (sender.isOp) {
+                return run(sender, command, label, args)
+            }
+        }
+        return false
+    }
+
+    fun run(sender: Player, command: Command, label: String, args: Array<out String>): Boolean {
+        when (args.size) {
+            0 -> {
+                val role = plugin.roleManager.get(sender)
+                if (role == null) {
+                    sender.sendMessage("Role is not Inited")
+                } else {
+                    sender.sendMessage("Role:${role.baseRole.displayName} isDead:${role.isDead}")
+                }
+                return true
+            }
+            1 -> {
+                val p = Bukkit.selectEntities(sender, args[0]).getOrNull(0)
+                return if (p == null) {
+                    sender.sendMessage("Player not Found!")
+                    false
+                } else if (p is Player) {
+                    val role = plugin.roleManager.get(p)
+                    if (role == null) {
+                        sender.sendMessage("Role is not Inited")
+                    } else {
+                        sender.sendMessage("Role:${role.baseRole.displayName} isDead:${role.isDead}")
+                    }
+                    true
+                } else {
+                    sender.sendMessage("It's not Player!")
+                    false
+                }
+            }
+            else -> {
+                return false
+            }
+        }
+    }
+}
+
+class SkipToVoteCommand(val plugin: Kwhc):CommandExecutor{
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if(sender is Player){
+            if(sender.isOp) return run(sender, command, label, args)
+        }else return run(sender, command, label, args)
+        return false
+    }
+
+    fun run(sender: CommandSender, command: Command, label: String, args: Array<out String>):Boolean{
+        Bukkit.broadcastMessage("投票までスキップ～！！！！！！")
+        plugin.timer.removeAllQue()
+        plugin.timeController.doVote()
+        return true
+    }
 }
