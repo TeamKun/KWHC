@@ -7,7 +7,7 @@ class Timer(val plugin: Kwhc) {
         plugin.server.scheduler.runTaskTimer(plugin, Runnable { onTick() }, 1, 1)
     }
 
-    private val queue = mutableMapOf<Runnable, Long>()
+    private var queue = mutableMapOf<Runnable, Long>()
 
     fun onTick() {
         val toRemove = mutableListOf<Runnable>()
@@ -22,5 +22,9 @@ class Timer(val plugin: Kwhc) {
 
     fun remove(r: Runnable) {
         queue.remove(r)
+    }
+
+    fun removeAllQue(){
+        queue = mutableMapOf<Runnable, Long>()
     }
 }

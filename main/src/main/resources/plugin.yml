@@ -17,3 +17,9 @@ commands:
   r:
     description: SetRole Command
     usage: /<command> (<playername>) <RoleName>
+  c:
+    description: CheckRole Command
+    usage: /<command> (<playerName>)
+  skip:
+    description: Skip To Vote Time
+    usage: /<command>

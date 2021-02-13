@@ -13,19 +13,22 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 
-class VoteManager(val plugin: Kwhc) : Listener{
+class VoteManager(val plugin: Kwhc) : Listener {
     companion object {
         val effectType = listOf(
             PotionEffectType.SLOW,
             PotionEffectType.BLINDNESS
         )
 
-        val effect = effectType.map { PotionEffect(it, 9999, 5) }
+        val effect = effectType.map { PotionEffect(it, 9999, 10) }
     }
 
     init {
-        plugin.server.pluginManager.registerEvents(this,plugin)
+        plugin.server.pluginManager.registerEvents(this, plugin)
     }
+
+
+    var isVoting = false
 
     /**
      * 投票スタート用
@@ -40,6 +43,7 @@ class VoteManager(val plugin: Kwhc) : Listener{
             }
         votes = mutableMapOf()
         Bukkit.broadcastMessage("投票開始!")
+        isVoting = true
     }
 
     /**
@@ -53,6 +57,7 @@ class VoteManager(val plugin: Kwhc) : Listener{
             .forEach {
                 effectEnd(it)
             }
+        isVoting = false
         Bukkit.broadcastMessage("投票終了!")
         onEnd()
     }
@@ -80,8 +85,12 @@ class VoteManager(val plugin: Kwhc) : Listener{
     val executioner = mutableListOf<RoleInstance>()
 
     fun onVote(from: RoleInstance, to: RoleInstance) {
-        Bukkit.broadcastMessage("${from.p.displayName}が${to.p.displayName}に投票しました")
-        votes[from] = to
+        if (isVoting) {
+            Bukkit.broadcastMessage("${from.p.displayName}が${to.p.displayName}に投票しました")
+            votes[from] = to
+        } else {
+            from.p.sendMessage("まだ投票は始まっていません!")
+        }
     }
 
     /**
@@ -89,7 +98,10 @@ class VoteManager(val plugin: Kwhc) : Listener{
      */
     private fun onEnd() {
         val voted = mutableMapOf<RoleInstance, Int>()
-        votes.forEach { (_, to) -> voted[to] = voted[to]!! + 1 }
+        votes.forEach { (_, to) ->
+            if(!voted.containsKey(to)) voted[to] = 0
+            voted[to] = voted[to]!! + 1
+        }
         val sorted = voted.map { Pair(it.key, it.value) }.sortedBy { it.second }.toMutableList()
         Bukkit.broadcastMessage("投票結果")
         sorted
@@ -99,19 +111,20 @@ class VoteManager(val plugin: Kwhc) : Listener{
             .forEachIndexed { i, it -> Bukkit.broadcastMessage("${i + 1}位 ${it.first.p.displayName}:${it.second}票") }
         executioner.add(sorted[0].first)
         sorted[0].first.p.health = 0.0
+        Bukkit.broadcastMessage("${sorted[0].first.p.displayName}が処刑されました")
     }
 
     /**
      * 処刑時用デスメッセージ
      */
     @EventHandler
-    fun onDeath(p:PlayerDeathEvent){
+    fun onDeath(p: PlayerDeathEvent) {
         p.deathMessage = ""
         val role = plugin.roleManager.get(p.entity)
-        if(role != null){
-            if(executioner.contains(role)){
+        if (role != null) {
+            if (executioner.contains(role)) {
                 Bukkit.broadcastMessage("${p.entity.displayName}は処刑された")
-            }else{
+            } else {
                 println("${p.entity.displayName}が処刑以外の理由で死亡")
             }
         }
